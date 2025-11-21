@@ -1,0 +1,17 @@
+[package]
+name = "juno_tls"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aws-lc-rs = "1.15.0"
+mio = {version = "1.1.0", features = ["net", "os-poll"]}
+rustls = {version = "0.23.35", features = ["aws-lc-rs", "log"]}
+slab = "0.4.11"
+rand = "0.9.2"
+rustls-pemfile = "2.2.0"
+juno_protocol = {path = "../juno_protocol/"}
+
+[features]
+server = []
+client = []
