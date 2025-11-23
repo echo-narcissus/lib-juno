@@ -1,0 +1,15 @@
+[package]
+name = "simple_server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# The path would be "./lib-juno/juno_*" if you clone the lib-juno repository into your server cargo project
+juno_protocol = {path = "../../juno_protocol/", features = ["server"]} 
+juno_tls = {path = "../../juno_tls/", features = ["server"]}
+
+
+# command line argument parsing
+clap = {version = "4.5.51", features = ["derive"]}
+clap_derive = "4.5.47"
+rand = "0.9.2"

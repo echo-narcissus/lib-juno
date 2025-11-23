@@ -1,3 +1,4 @@
+#![allow(unused)]
 mod config;
 mod config_loader;
 mod tls_server;

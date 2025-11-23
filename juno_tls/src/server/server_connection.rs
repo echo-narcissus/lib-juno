@@ -44,7 +44,7 @@ impl Connection {
     }
 
     pub fn ready<F, G>(&mut self, poll: &mut Poll, event: &Event, mut plaintext_buffer_callback: F, mut operation_execution_callback: G) 
-    where F: FnMut(&mut Vec<u8>) -> juno_protocol::Operation,
+    where F: FnMut(&mut Vec<u8>) -> Option<juno_protocol::Operation>,
           G: FnMut(juno_protocol::Operation) -> Result<Option<Vec<u8>>, String>
     {
 
@@ -60,17 +60,21 @@ impl Connection {
             // Connection is marked for closure, don't re-register.
             return;
         }
-
-        let callback_result = operation_execution_callback(plaintext_buffer_callback(&mut self.incoming_plaintext_buffer));
-        match callback_result {
-            Err(message) => {eprintln!("{}", message)},
-            Ok(optional_outgoing_data) => {
-                match optional_outgoing_data {
-                    None => {},
-                    Some(data) => {
-                         self.outgoing_plaintext_buffer
-                            .extend_from_slice(&(data.len() as u32).to_be_bytes());
-                        self.outgoing_plaintext_buffer.extend_from_slice(&data);
+        match plaintext_buffer_callback(&mut self.incoming_plaintext_buffer) {
+            None => {},
+            Some(op) => {
+                let callback_result = operation_execution_callback(op);
+                match callback_result {
+                    Err(message) => {eprintln!("{}", message)},
+                    Ok(optional_outgoing_data) => {
+                        match optional_outgoing_data {
+                            None => {},
+                            Some(data) => {
+                                 self.outgoing_plaintext_buffer
+                                    .extend_from_slice(&(data.len() as u32).to_be_bytes());
+                                self.outgoing_plaintext_buffer.extend_from_slice(&data);
+                            }
+                        }
                     }
                 }
             }

@@ -16,7 +16,7 @@ use std::time::Duration;
 
 const SERVER_TOKEN: Token = Token(usize::MAX);
 
-type StreamCallback = Arc<Mutex<Box<dyn FnMut(&mut Vec<u8>) -> Operation>>>;
+type StreamCallback = Arc<Mutex<Box<dyn FnMut(&mut Vec<u8>) -> Option<Operation>>>>;
 type OperationCallback = Arc<Mutex<Box<dyn FnMut(Operation) -> Result<Option<Vec<u8>>, String>>>>;
 
 pub struct TlsServer {

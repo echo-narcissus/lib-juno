@@ -43,12 +43,13 @@ fn parse_store_operation(buffer: &mut Vec<u8>, msg_id_size: u8) -> Result<Operat
 
     let total_len = header_len + body_len;
 
+    let delete_early = matches!(buffer[(header_len + data_len)], EXPIRE_EARLY);
+    
     let op_bytes = buffer.drain(..total_len).collect::<Vec<u8>>();
 
     let id = op_bytes[1..1 + (msg_id_size as usize)].to_vec();
     let data = op_bytes[header_len..header_len + data_len].to_vec();
 
-    let delete_early = matches!(buffer[header_len + data_len], EXPIRE_EARLY);
     Ok(Operation::Store {
         id,
         data,

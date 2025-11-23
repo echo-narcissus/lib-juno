@@ -10,12 +10,15 @@ pub struct ServerConfiguration {
 }
 impl ServerConfiguration {
 
-    pub fn new(cert_path: &Path, key_path: &Path, socket_addr: SocketAddr) -> Result<ServerConfiguration, String> {
+    pub fn new(cert_path: &Path, key_path: &Path, bind_addr: &String, port: u16) -> Result<ServerConfiguration, String> {
         let tls_config = match config_loader::load_tls_config(cert_path, key_path) {
             Ok(config) => {Arc::new(config)},
             Err(e) => {return Err(format!("Could not load TLS config from provided paths. {}", e))}
         };
 
+        let socket_addr: SocketAddr = format!("{}:{}", bind_addr, port)
+            .parse()
+            .expect("Failed to parse bind address");
         Ok(ServerConfiguration {tls_config, socket_addr})
     }
 }
