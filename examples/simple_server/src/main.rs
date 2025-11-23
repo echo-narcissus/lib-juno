@@ -8,11 +8,15 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+type Storage = HashMap<Vec<u8>, Vec<u8>>;
+type StreamCallback = Box<dyn FnMut(&mut Vec<u8>) -> Option<Operation>>;
+type OpCallback = Box<dyn FnMut(Operation) -> Result<Option<Vec<u8>>, String>>;
+
 fn main() {
     let args = args::Cli::parse_args();
     let server_config = ServerConfiguration::new(&args.cert, &args.key, &args.bind_addr, args.port).unwrap();
 
-    let storage: RefCell<(HashMap<Vec<u8>, Vec<u8>>, HashMap<Vec<u8>, Vec<u8>>)> = RefCell::new(
+    let storage: RefCell<(Storage, Storage)> = RefCell::new(
         (HashMap::new(), HashMap::new()));
 
     let stream_callback_cloj = move |buffer: &mut Vec<u8>| -> Option<Operation> { 
@@ -27,8 +31,7 @@ fn main() {
         }
     };
 
-    let stream_callback_box: Box<dyn FnMut(&mut Vec<u8>) -> Option<Operation>> = 
-        Box::new(stream_callback_cloj);
+    let stream_callback_box: StreamCallback = Box::new(stream_callback_cloj);
     let stream_callback = Arc::new(Mutex::new(stream_callback_box));
 
 
@@ -36,7 +39,7 @@ fn main() {
         execute_operation(op, &mut storage.borrow_mut())
     };
 
-    let op_callback_box: Box<dyn FnMut(Operation) -> Result<Option<Vec<u8>>, String>> = Box::new(op_callback_cloj);
+    let op_callback_box: OpCallback = Box::new(op_callback_cloj);
     let operation_callback = Arc::new(Mutex::new(op_callback_box));
 
     let mut tls_server = TlsServer::new(server_config, args.msg_id_size, stream_callback, operation_callback).expect("couldn't establish TLS server.");
@@ -47,16 +50,16 @@ fn main() {
 
 }
 
-fn execute_operation(op: Operation, storage: &mut (HashMap<Vec<u8>, Vec<u8>>, HashMap<Vec<u8>, Vec<u8>>)) -> Result<Option<Vec<u8>>, String> {
+fn execute_operation(op: Operation, storage: &mut (Storage, Storage)) -> Result<Option<Vec<u8>>, String> {
     match op {
         Operation::Retrieve { id } => {
             match storage.0.get(&id) {
-                Some(data) => {return Ok(Some(data.clone()))},
+                Some(data) => {Ok(Some(data.clone()))},
                 None => {
                     match storage.1.get(&id) {
-                        Some(data) => {return Ok(Some(data.clone()))},
+                        Some(data) => {Ok(Some(data.clone()))},
                         None => {
-                            return Ok(Some(generate_garbage_data()))
+                            Ok(Some(generate_garbage_data()))
                         }
                     }
                 }
